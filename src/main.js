@@ -71,6 +71,15 @@ directionalLight.castShadow = true;
 directionalLight.shadow.mapSize.set(2048, 2048);
 scene.add(directionalLight, directionalLight.target);
 directionalLight.target.updateMatrixWorld();
+
+// スポットライト
+const spotLight = new THREE.SpotLight('red', 50) ;
+spotLight.position.set(0, 2, 0);
+spotLight.castShadow = true;
+spotLight.shadow.camera.near = 500;
+spotLight.shadow.camera.far = 4000;
+spotLight.shadow.camera.fov = 30
+scene.add(spotLight);
 //コントロール
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -111,7 +120,9 @@ boxFolder.addBinding(boxParams, 'color', { label: 'Color' }).on('change', (ev) =
 // 2. ライトと影の調整
 const lightFolder = pane.addFolder({ title: 'Light & Shadow' });
 lightFolder.addBinding(directionalLight, 'intensity', { min: 0, max: 10, label: 'Intensity' });
-
+lightFolder.addBinding(directionalLight.position, 'x', {min: -10, max: 10, label: 'position X'});
+lightFolder.addBinding(directionalLight.position, 'y', {min: -10, max: 10, label: 'position Y'});
+lightFolder.addBinding(directionalLight.position, 'z', {min: -10, max: 10, label: 'position Z'});
 // 影のカメラ範囲（重要：ここを絞ると影が綺麗になります）
 const shadowCam = directionalLight.shadow.camera;
 const shadowFolder = lightFolder.addFolder({ title: 'Shadow Camera Area', expanded: false });
@@ -119,15 +130,20 @@ const shadowFolder = lightFolder.addFolder({ title: 'Shadow Camera Area', expand
 const updateShadowCamera = () => {
   shadowCam.updateProjectionMatrix();
   // ヘルパーを表示している場合は helper.update() を呼ぶ
+  if (shadowHelper.parent) shadowHelper.update();
 };
 
-shadowFolder.addBinding(shadowCam, 'top', { min: 1, max: 20 }).on('change', updateShadowCamera);
-shadowFolder.addBinding(shadowCam, 'bottom', { min: -20, max: -1 }).on('change', updateShadowCamera);
-shadowFolder.addBinding(shadowCam, 'left', { min: -20, max: -1 }).on('change', updateShadowCamera);
-shadowFolder.addBinding(shadowCam, 'right', { min: 1, max: 20 }).on('change', updateShadowCamera);
+const updateShadowBlur = () => {
+  // radiusの変更は自動反映されるので追加処理は不要
+};
+
+shadowFolder.addBinding(shadowCam, 'top', { min: 1, max: 20, label: 'Top' }).on('change', updateShadowCamera);
+shadowFolder.addBinding(shadowCam, 'bottom', { min: -20, max: -1, label: 'Bottom' }).on('change', updateShadowCamera);
+shadowFolder.addBinding(shadowCam, 'left', { min: -20, max: -1, label: 'Left' }).on('change', updateShadowCamera);
+shadowFolder.addBinding(shadowCam, 'right', { min: 1, max: 20, label: 'Right' }).on('change', updateShadowCamera);
 
 // 影のボケ味
-lightFolder.addBinding(directionalLight.shadow, 'radius', { min: 0, max: 20, label: 'Blur' });
+lightFolder.addBinding(directionalLight.shadow, 'radius', { min: 0, max: 20, label: 'Blur' }).on('change', updateShadowBlur);
 
 // 3. ヘルパーの表示切り替え
 const helpers = {
@@ -138,4 +154,5 @@ pane.addBinding(helpers, 'shadowHelper', { label: 'Show Shadow Box' }).on('chang
   if (ev.value) scene.add(shadowHelper);
   else scene.remove(shadowHelper);
 });
+
 animate();
