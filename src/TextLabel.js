@@ -63,4 +63,8 @@ export class TextLabel{
   setPosition(x, y, z) {
     this.group.position.set(x, y, z);
   }
+  // 角度を一括で変えるメソッド
+  setRotation(x, y, z) {
+    this.group.rotation.set(x, y, z);
+  }
 }
