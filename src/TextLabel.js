@@ -3,9 +3,9 @@ import * as THREE from 'three';
 export class TextLabel{
   constructor(message, font, options={}) {
     const {
-      color = 0x006699,
-      size = 100,
-      zPos = -150,
+      color = 0x8cd2f5,
+      size = 1,
+      zPos = -5,
     } = options;
 
     this.group = new THREE.Group();
@@ -23,7 +23,7 @@ export class TextLabel{
     const matLite = new THREE.MeshBasicMaterial({
       color: color,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.8,
       side: THREE.DoubleSide,
     });
     this.mesh = new THREE.Mesh(geometry, matLite);
