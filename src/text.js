@@ -99,6 +99,47 @@ const loader = new THREE.TextureLoader();
     render();
   });
 
+  //スクロールアニメションをスクロールに応じる線形補間で滑らかに移動させる
+  function lerp(x, y, a) {
+    return (1 - a) * x + a * y;
+  }
+
+  function scalePercent(start, end) {
+    return (scrollPercent - start / (end - start));
+  }
+
+  // スクロールアニメーション
+  const animationScripts = [];
+
+  animationScripts.push({
+    start: 0,
+    end: 100,
+    function() {
+      camera.position.z = lerp(30, 10, scalePercent(0, 100));
+      light.position.z = lerp(30, 10, scalePercent(0, 100));
+    }
+  });
+
+  // ブラウザのスクロール率を取得
+
+  let scrollPercent = 0;
+
+  document.body.onscroll = () => {
+    scrollPercent =
+      (document.documentElement.scrollTop /
+        (document.documentElement.scrollHeight -
+          document.documentElement.clientHeight)) * 100;
+          console.log(scrollPercent);
+  }
+
+  //アニメーションを開始
+  function playScrollAnimation() {
+    animationScripts.forEach((animation) => {
+      if(scrollPercent >= animation.start && scrollPercent < animation.end)
+      animation.function();
+    })
+  }
+
   const canvas = document.querySelector('#webgl');
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
@@ -117,6 +158,7 @@ const loader = new THREE.TextureLoader();
 function animate() {
   requestAnimationFrame(animate);
   controls.update(); // 慣性のために必要
+  playScrollAnimation()
   render();
 }
 animate();
