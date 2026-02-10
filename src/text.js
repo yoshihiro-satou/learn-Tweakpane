@@ -11,10 +11,11 @@ init();
 
 function init() {
   //カメラ
-  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000);
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
   const isMobile = window.innerWidth < 768;
   camera.position.set(0, isMobile ? 2 : 3, isMobile ? 40 : 30);
-  camera.lookAt(0, 3, 0);
+  camera.lookAt(0, 3, -40);
+  camera.up.set(0, 1, 0);
   scene = new THREE.Scene();
   // scene.background = new THREE.Color(0xf0f0f0);
 
@@ -56,7 +57,7 @@ function init() {
 
 const loader = new THREE.TextureLoader();
 
-  const floorGeometry = new THREE.BoxGeometry(10, 1, 100);
+  const floorGeometry = new THREE.BoxGeometry(10, 1, 150);
   loader.load('../images/PavingStones092_2K-JPG_Color.jpg', (texture) => {
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
@@ -105,7 +106,7 @@ const loader = new THREE.TextureLoader();
   }
 
   function scalePercent(start, end) {
-    return (scrollPercent - start / (end - start));
+    return (scrollPercent - start) / (end - start);
   }
 
   // スクロールアニメーション
@@ -113,10 +114,12 @@ const loader = new THREE.TextureLoader();
 
   animationScripts.push({
     start: 0,
-    end: 100,
+    end: 50,
     function() {
-      camera.position.z = lerp(30, 10, scalePercent(0, 100));
-      light.position.z = lerp(30, 10, scalePercent(0, 100));
+      camera.position.z = lerp(30, -20, scalePercent(0, 50));
+      light.position.z = lerp(30, -20, scalePercent(0, 50));
+      camera.lookAt(0, 0, -40);
+      camera.up.set(0, 1, 0);
     }
   });
 
@@ -143,7 +146,7 @@ const loader = new THREE.TextureLoader();
   const canvas = document.querySelector('#webgl');
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
-    // alpha: true,
+    alpha: true,
     antialias: true,
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
