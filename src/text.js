@@ -11,23 +11,23 @@ init();
 
 function init() {
   //カメラ
-  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
   const isMobile = window.innerWidth < 768;
-  camera.position.set(0, isMobile ? 2 : 3, isMobile ? 40 : 30);
+  camera = new THREE.PerspectiveCamera(isMobile ? 85 : 45, window.innerWidth / window.innerHeight, 0.1, 10000);
+  camera.position.set(0, 3, 50);
   camera.lookAt(0, 3, -40);
   camera.up.set(0, 1, 0);
   scene = new THREE.Scene();
   // scene.background = new THREE.Color(0xf0f0f0);
 
   // ライト
-  const light = new THREE.SpotLight(0xffffff, 500, 40, 56);
-  light.position.set(0, 30, 30);
+  const light = new THREE.SpotLight(0xffffff, 250, 40, 35);
+  light.position.set(0, 20, 30);
   light.target.position.set(0, -30, 0);
   scene.add(light, light.target);
 
   //ライトヘルパー
   const helper = new THREE.SpotLightHelper( light );
-		scene.add( helper );
+		// scene.add( helper );
 
 		function updateLight() {
 			light.target.updateMatrixWorld();
@@ -80,14 +80,14 @@ const loader = new THREE.TextureLoader();
     // 好きな位置に配置
     myTextfirst.setPosition(0, 5, 20);
 
-    const myTextSecond = new TextLabel('My skills are\n HTML. css ...', font, {
+    const myTextSecond = new TextLabel('My skills are\n HTML. css.', font, {
       color: 0xf1f58c,
       size: 1,
       zPos: -1,
     });
     myTextSecond.setPosition(0, 5, 0);
 
-    const myTextThird = new TextLabel('React. Next.js\n         etc...', font, {
+    const myTextThird = new TextLabel('   Javascript.\nReact. Next.js.', font, {
       color: 0x8cf5c4,
       size: 1,
       zPos: -1,
@@ -116,10 +116,13 @@ const loader = new THREE.TextureLoader();
     start: 0,
     end: 50,
     function() {
-      camera.position.z = lerp(30, -20, scalePercent(0, 50));
-      light.position.z = lerp(30, -20, scalePercent(0, 50));
+      const zPos = lerp(30, -10, scalePercent(0, 50));
+      camera.position.z = zPos;
+      light.position.z = zPos;
+      light.target.position.z = zPos - 40;
       camera.lookAt(0, 0, -40);
       camera.up.set(0, 1, 0);
+      updateLight();
     }
   });
 
@@ -146,7 +149,7 @@ const loader = new THREE.TextureLoader();
   const canvas = document.querySelector('#webgl');
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
-    alpha: true,
+    // alpha: true,
     antialias: true,
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -155,8 +158,11 @@ const loader = new THREE.TextureLoader();
   const controls = new OrbitControls( camera, canvas);
   controls.enableDamping = true; // 慣性をつける
   controls.dampingFactor = 0.05;
+  controls.enabled = false;
   controls.target.set(0, 3, 0);
   controls.update();
+
+  gui.hide();
 
 function animate() {
   requestAnimationFrame(animate);
