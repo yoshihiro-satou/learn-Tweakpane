@@ -5,7 +5,10 @@ import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextLabel } from './TextLabel.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { ColorGUIHelper, DegRadHelper, makeXYZGUI } from './lightHelper.js';
-let camera, scene, renderer;
+import { initDynamic } from './dynamic.js';
+
+let camera, sceneA, sceneB, renderer;
+let currentScene = sceneA;
 
 init();
 
@@ -16,14 +19,17 @@ function init() {
   camera.position.set(0, 3, 50);
   camera.lookAt(0, 3, -40);
   camera.up.set(0, 1, 0);
-  scene = new THREE.Scene();
+  sceneA = new THREE.Scene();
+  sceneB = new THREE.Scene();
+
+ 
   // scene.background = new THREE.Color(0xf0f0f0);
 
   // ライト
   const light = new THREE.SpotLight(0xffffff, 250, 40, 35);
   light.position.set(0, 20, 30);
   light.target.position.set(0, -30, 0);
-  scene.add(light, light.target);
+  sceneA.add(light, light.target);
 
   //ライトヘルパー
   const helper = new THREE.SpotLightHelper( light );
@@ -49,11 +55,11 @@ function init() {
       const color = 'black';
       const near = 10;
       const far = 33;
-      scene.fog = new THREE.Fog(color, near, far);
+      sceneA.fog = new THREE.Fog(color, near, far);
     }
 
   const grid = new THREE.GridHelper(100, 10, 0xffffff, 0x7b7b7b);
-  scene.add(grid);
+  sceneA.add(grid);
 
 const loader = new THREE.TextureLoader();
 
@@ -66,7 +72,7 @@ const loader = new THREE.TextureLoader();
       map: texture,
     });
     const floor = new THREE.Mesh(floorGeometry, material);
-    scene.add(floor);
+    sceneA.add(floor);
   })
   const fontLoader = new FontLoader();
   fontLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json', function( font ) {
@@ -95,7 +101,7 @@ const loader = new THREE.TextureLoader();
     myTextThird.setPosition(0, 5, -20);
 
     // シーンに追加（myText.group を追加するのがポイント）
-    scene.add(myTextfirst.group, myTextSecond.group, myTextThird.group);
+    sceneA.add(myTextfirst.group, myTextSecond.group, myTextThird.group);
 
     render();
   });
@@ -111,20 +117,28 @@ const loader = new THREE.TextureLoader();
 
   // スクロールアニメーション
   const animationScripts = [];
-
+initDynamic('#webgl');
   animationScripts.push({
     start: 0,
     end: 50,
-    function() {
+    function: function() {
       const zPos = lerp(30, -10, scalePercent(0, 50));
       camera.position.z = zPos;
       light.position.z = zPos;
       light.target.position.z = zPos - 40;
       camera.lookAt(0, 0, -40);
       camera.up.set(0, 1, 0);
+      currentScene = sceneA;
       updateLight();
     }
-  });
+  },{
+  start: 51,
+  end: 100,
+  function: function() {
+    currentScene = sceneB;
+  }
+}
+);
 
   // ブラウザのスクロール率を取得
 
@@ -185,5 +199,5 @@ function onWindowResize() {
 }
 
 function render() {
-  renderer.render(scene, camera);
+  renderer.render(currentScene, camera);
 }

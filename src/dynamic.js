@@ -1,8 +1,10 @@
+import './style.css'
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import TWEEN from 'three/addons/libs/tween.module.js';
 
-let camera, scene, renderer, timer, mesh;
+export function initDynamic() {
+  let camera, sceneB, renderer, timer, mesh;
 
 const amount = 100;
 
@@ -10,7 +12,7 @@ const count = Math.pow( amount, 2);
 const dummy = new THREE.Object3D();
 
 const seeds = [];
-const baseColor = [];
+const baseColors = [];
 
 const color = new THREE.Color();
 const colors = [ new THREE.Color(0x00ffff), new THREE.Color(0xffff00) ];
@@ -20,10 +22,6 @@ let nextColorIndex = 1;
 
 const maxDistance = 75;
 const cameraTarget = new THREE.Vector3();
-
-init();
-
-function init() {
 
   const canvas = document.querySelector('#webgl');
   renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true });
@@ -39,9 +37,9 @@ function init() {
 
   const pmremGenerator = new THREE.PMREMGenerator( renderer );
 
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color( 0xadd8e6 );
-  scene.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04).texture;
+  sceneB = new THREE.Scene();
+  sceneB.background = new THREE.Color( 0xadd8e6 );
+  sceneB.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04).texture;
 
   timer = new THREE.Timer();
   timer.connect( document );
@@ -51,11 +49,13 @@ function init() {
   texture.colorSpace = THREE.SRGBColorSpace;
 
   const geometry = new THREE.BoxGeometry();
-  const material = new THREE.MeshStandardMaterial({ map: texture });
+  const material = new THREE.MeshStandardMaterial({
+    map: texture
+  });
 
   mesh = new THREE.InstancedMesh( geometry, material, count );
   mesh.instanceMatrix.setUsage( THREE.DynamicDrawUsage );
-  scene.add( mesh );
+  sceneB.add( mesh );
 
   let i = 0;
   const offset = ( amount - 1) / 2;
@@ -69,10 +69,10 @@ function init() {
       dummy.updateMatrix();
 
       color.setHSL( 1, 0.5 + ( Math.random() * 0.5 ), 0.5 + ( Math.random() * 0.5 ) );
-      baseColor.push( color.getHex() );
+      baseColors.push( color.getHex() );
 
       mesh.setMatrixAt( i, dummy.matrix );
-      mesh.setColorAt( i, color.multiply( color[0] ) );
+      mesh.setColorAt( i, color.multiply( colors[0] ) );
 
       i++;
 
@@ -83,5 +83,107 @@ function init() {
   //
 
   window.addEventListener('resize', onWindowResize);
+  renderer.setAnimationLoop(animate);
   setInterval( startTween, 3000);
+
+  function startTween() {
+
+				// tween for animating color transition
+				new TWEEN.Tween( animation )
+					.to( {
+						t: 1
+					}, 2000 )
+					.easing( TWEEN.Easing.Sinusoidal.In )
+					.onComplete( () => {
+
+						animation.t = 0;
+
+						currentColorIndex = nextColorIndex;
+						nextColorIndex ++;
+
+						if ( nextColorIndex >= colors.length ) nextColorIndex = 0;
+
+					} )
+					.start();
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+
+			function animate() {
+
+				timer.update();
+
+				const time = timer.getElapsed();
+
+				TWEEN.update();
+
+				// animate camera
+
+				camera.position.x = Math.sin( time / 4 ) * 10;
+				camera.position.z = Math.cos( time / 4 ) * 10;
+				camera.position.y = 8 + Math.cos( time / 2 ) * 2;
+
+				cameraTarget.x = Math.sin( time / 4 ) * - 8;
+				cameraTarget.z = Math.cos( time / 2 ) * - 8;
+
+				camera.lookAt( cameraTarget );
+
+				camera.up.x = Math.sin( time / 400 );
+
+				// animate instance positions and colors
+
+				for ( let i = 0; i < mesh.count; i ++ ) {
+
+					mesh.getMatrixAt( i, dummy.matrix );
+					dummy.matrix.decompose( dummy.position, dummy.quaternion, dummy.scale );
+
+					dummy.position.y = Math.abs( Math.sin( ( time + seeds[ i ] ) * 2 + seeds[ i ] ) );
+
+					dummy.updateMatrix();
+
+					mesh.setMatrixAt( i, dummy.matrix );
+
+					// colors
+
+					if ( animation.t > 0 ) {
+
+						const currentColor = colors[ currentColorIndex ];
+						const nextColor = colors[ nextColorIndex ];
+			
+						const f = dummy.position.length() / maxDistance;
+
+						if ( f <= animation.t ) {
+
+							color.set( baseColors[ i ] ).multiply( nextColor );
+
+						} else {
+
+							color.set( baseColors[ i ] ).multiply( currentColor );
+
+						}
+
+						mesh.setColorAt( i, color );
+
+					}
+
+				}
+
+				mesh.instanceMatrix.needsUpdate = true;
+				if ( animation.t > 0 ) mesh.instanceColor.needsUpdate = true;
+			
+				mesh.computeBoundingSphere();
+
+				renderer.render( sceneB, camera );
+
+  }
 }
