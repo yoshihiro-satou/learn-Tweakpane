@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import TWEEN from 'three/addons/libs/tween.module.js';
 
-export function initDynamic() {
-  let camera, sceneB, renderer, timer, mesh;
+export function initDynamic(externalRenderer) {
+	let camera, scene, renderer, timer, mesh;
 
 const amount = 100;
 
@@ -23,12 +23,15 @@ let nextColorIndex = 1;
 const maxDistance = 75;
 const cameraTarget = new THREE.Vector3();
 
-  const canvas = document.querySelector('#webgl');
-  renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true });
-  renderer.setPixelRatio( window.devicePixelRatio );
-  renderer.setSize( window.innerWidth, window.innerHeight );
-  renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.setAnimationLoop( animate );
+	if ( externalRenderer ) {
+		renderer = externalRenderer;
+	} else {
+		const canvas = document.querySelector('#webgl');
+		renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true});
+		renderer.setPixelRatio( window.devicePixelRatio );
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		renderer.toneMapping = THREE.NeutralToneMapping;
+	}
 
 
   camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -37,9 +40,9 @@ const cameraTarget = new THREE.Vector3();
 
   const pmremGenerator = new THREE.PMREMGenerator( renderer );
 
-  sceneB = new THREE.Scene();
-  sceneB.background = new THREE.Color( 0xadd8e6 );
-  sceneB.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04).texture;
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color( 0xadd8e6 );
+  scene.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04).texture;
 
   timer = new THREE.Timer();
   timer.connect( document );
@@ -55,7 +58,7 @@ const cameraTarget = new THREE.Vector3();
 
   mesh = new THREE.InstancedMesh( geometry, material, count );
   mesh.instanceMatrix.setUsage( THREE.DynamicDrawUsage );
-  sceneB.add( mesh );
+  scene.add( mesh );
 
   let i = 0;
   const offset = ( amount - 1) / 2;
@@ -83,7 +86,6 @@ const cameraTarget = new THREE.Vector3();
   //
 
   window.addEventListener('resize', onWindowResize);
-  renderer.setAnimationLoop(animate);
   setInterval( startTween, 3000);
 
   function startTween() {
@@ -119,11 +121,7 @@ const cameraTarget = new THREE.Vector3();
 
 			//
 
-			function animate() {
-
-				timer.update();
-
-				const time = timer.getElapsed();
+			function updateDynamic(time) {
 
 				TWEEN.update();
 
@@ -139,6 +137,9 @@ const cameraTarget = new THREE.Vector3();
 				camera.lookAt( cameraTarget );
 
 				camera.up.x = Math.sin( time / 400 );
+
+				mesh.instanceMatrix.needsUpdate = true;
+				if ( animation.t > 0 ) mesh.instanceColor.needsUpdate = true;
 
 				// animate instance positions and colors
 
@@ -159,7 +160,7 @@ const cameraTarget = new THREE.Vector3();
 
 						const currentColor = colors[ currentColorIndex ];
 						const nextColor = colors[ nextColorIndex ];
-			
+
 						const f = dummy.position.length() / maxDistance;
 
 						if ( f <= animation.t ) {
@@ -182,8 +183,6 @@ const cameraTarget = new THREE.Vector3();
 				if ( animation.t > 0 ) mesh.instanceColor.needsUpdate = true;
 			
 				mesh.computeBoundingSphere();
-
-				renderer.render( sceneB, camera );
-
   }
+	return { camera, scene, updateDynamic };
 }
