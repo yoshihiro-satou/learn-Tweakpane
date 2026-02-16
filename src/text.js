@@ -179,25 +179,10 @@ const loader = new THREE.TextureLoader();
   });
   animationScripts.push({
     start: 60,
-    end: 65,
-    function: function() {
-      fadeMaterial.opacity = lerp(0, 1, scalePercent(60, 65));
-    }
-  });
-  animationScripts.push({
-    start: 65,
-    end: 70,
-    function: function() {
-      fadeMaterial.opacity = lerp(1, 0, scalePercent(65, 70));
-    }
-  });
-  animationScripts.push({
-    start: 70,
     end: 100,
     function: function() {
       currentScene = sceneB;
       currentCamera = cameraB;
-      cameraB.add(fadeMesh);
     }
   });
 
